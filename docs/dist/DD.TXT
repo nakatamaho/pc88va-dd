@@ -1,0 +1,152 @@
+The Game DD: an unofficial PC-88VA / PC-88VA2 port of an arcade game
+(MS-DOS 4.0 disk, dd-pc88va)
+
+This is an independent, unofficial program. It is not made, endorsed or
+supported by the owners of the original game or by NEC.
+
+The disk holds MS-DOS 4.0 for the PC-88VA (FreeDOS-88VA project, MIT
+licence, see LICENSE.TXT and README.TXT on the disk) and DD.COM (two-clause
+BSD licence, see DDLICENS.TXT). It contains no data from the arcade game:
+you need your own copies of its ROM files. A Python script on your PC
+checks them and adds the game data to the disk.
+
+Package
+-------
+    dd-msdos4.d88     the disk, without game data
+    DD.COM            the game (also on the disk)
+    install_roms.py   adds the game data built from your ROM files
+    *.py              modules used by install_roms.py; pcengine_disk.py
+                      (vaeg project) writes the files to the disk
+    DD.TXT            this file
+    DDLICENS.TXT      the licence
+
+Adding the game data
+--------------------
+You need Python 3.10 or later; for the fitted FM voices also NumPy
+(pip install numpy). With the game's current commercial re-release, give
+its plugin DLL, Release_0.dll (394240 bytes, CRC-32 AA58DC77, in the
+Plugins folder of the game's data folder), or simply the game's install
+folder; run, in this directory (on Windows, py instead of python3):
+
+    python3 -I install_roms.py --fit-fm dd-msdos4.d88 Release_0.dll dd-msdos4-roms.d88
+
+The ROM files themselves, in a directory or a zip file (any names), work
+as well:
+
+    python3 -I install_roms.py --fit-fm dd-msdos4.d88 ROMS.zip dd-msdos4-roms.d88
+
+The script
+  1. finds the ROMs listed below by size and CRC-32 (in the DLL, wherever
+     they are stored) and checks them by SHA-1; it names the ones it does
+     not find,
+  2. patches the three programs and decodes the graphics into DDGAME.DAT,
+  3. with --fit-fm, fits the FM voices to the sound PROM's waveforms on
+     your PC (about a quarter of a minute on a fast multi-core PC; much
+     longer on a slow one) into FMVOICE.DAT,
+  4. adds DDGAME.DAT and FMVOICE.DAT to the root of a copy of the disk, the
+     third argument (by default dd-msdos4-roms.d88), and writes
+     FMVOICE.DAT beside it.
+
+Without --fit-fm the disk has SSG sound only. Other options: --quick-fm
+makes approximate FM voices at once and needs no NumPy; --fmvoice
+FMVOICE.DAT reuses voices made before; --revision rev1 or rev2 chooses
+the programs when the source holds both.
+
+DD.COM only loads DDGAME.DAT and FMVOICE.DAT and the game checks them
+(CRC-32) when it starts; the PC-88VA does no FM fitting. The two files can
+also be copied to a disk under MS-DOS. dd-msdos4-roms.d88, DDGAME.DAT and
+FMVOICE.DAT hold data from your ROMs: keep them for yourself, do not
+distribute them.
+
+ROM files
+---------
+Shared by both program revisions:
+
+    size   CRC-32
+    4096   A41BCE72   sound program
+    2048   F14A6FE1   characters
+    4096   E22957C8   sprites 1
+    4096   2829EC99   sprites 2
+    4096   458499E9   sprites 3
+    4096   C58252A0   sprites 4
+    4096   7B383983   background tiles
+    4096   2CF399C2   background maps
+      32   4CB9DA99   colours
+     256   00C7C419   sprite colour lookup
+     256   E9B3E08E   background colour lookup
+     256   7A2815B4   sound waveforms
+
+Main (4 files) and sub (2 files) programs of either revision:
+
+    rev1       rev2
+    B9198079   A80EC984   main 1
+    B2ACBE49   559F00BD   main 2
+    D6407B49   8CBC6FE1   main 3
+    F4CEBC16   D066F830   main 4
+    370EF9B4   6687933B   sub 1
+    361EEB71   843D857F   sub 2
+
+All are 4096 bytes. rev1 is the revision in the current commercial
+re-release's DLL; a zip extracted from it by game-extraction-toolbox
+(https://github.com/shawngmc/game-extraction-toolbox) can be given too.
+
+Running
+-------
+The disk starts DD from AUTOEXEC.BAT. DD [directory] looks for DDGAME.DAT
+and FMVOICE.DAT in another directory; without them it says so and returns
+to MS-DOS.
+
+The game needs a monitor that accepts 15 kHz (320x224 at 15.98 kHz), and
+the machine must be started in 15 kHz mode (CRT mode: DIP switch SW1 off);
+started at 24 kHz, DD stops with a message. It needs the standard 512 KB
+of memory, all of it from segment 2000h up: DD must be loaded below 2000h
+(MS-DOS 4.0 from this disk loads it at about 1DDCh). Picture the game with
+the monitor turned clockwise: the top of the game is on the left of the
+screen.
+
+First an alignment screen is shown for about 5 seconds: let the monitor
+adjust itself, move the picture with keypad 8 2 4 6 (or the cursor keys),
+start at once with RETURN or SPACE. The position is kept until DD ends.
+
+Keys (in the game's orientation):
+
+    cursor keys, keypad 8 2 4 6   move
+    SPACE, keypad 0               action
+    5                             coin
+    1                             start
+    F10                           service screen
+    F9                            load display (see below)
+    ESC                           restart the machine
+
+Service screen (F10; the game is paused): DIP switches (coins, lives,
+bonus, level, continue, demo sound), SOUND (SSG, or FM when FMVOICE.DAT
+was installed), TEST (20 sounds), ROUND (for testing: games start at
+that round; OFF is normal play) and FPS (60, the default: the picture is
+drawn every frame when there is time; 30: every second frame, lighter). Cursor keys or keypad 8 2 choose, 4 6
+change (held, they repeat), RETURN or SPACE plays the sound or adds 10 to
+ROUND, F10 returns.
+Changed switches restart the game; they are not saved. ROUND applies from
+the next game start and is kept until DD ends.
+
+Load display (F9 turns it on and off), in the margins (above and below
+the picture; on the turned monitor it reads like the game's own text),
+over the last 60 frames, each number after its letter:
+
+    F  game frames (60 at full speed)
+    D  frames dropped (skipped: the game fell more than 3 frames behind)
+    R  pictures drawn (60: every frame)
+    T  sound ticks (120)
+    I  idle time, percent
+    K  (other margin, hex) the keys read
+    M  (other margin, hex) the input chip's mode
+    S  (other margin, hex) the sound: 01 the sound chip stopped
+       answering, 02 FM voices loaded, 04 FM in use
+
+Sound uses the YM2203: FM voices when fitted ones were installed
+(--fit-fm), otherwise SSG square waves; F10 switches between them. Neither
+reproduces the original waveform sound exactly.
+
+Status: an experimental build, checked on an emulator. In busy scenes the
+game can fall slightly behind the full speed. When the whole background
+changes (a coin, the start of a round) it is redrawn over a few frames,
+top to bottom, so that the game and its sound keep running.

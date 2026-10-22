@@ -1,0 +1,11 @@
+# Arcade ROM images and anything derived from them are never committed.
+# The build reads them from $DD_ROMS (tools/roms.py).
+*.zip
+*.rom
+*.bin
+*.d88
+*.lst
+build/
+roms_x*/
+scratch/
+__pycache__/
